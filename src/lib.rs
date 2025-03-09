@@ -9,22 +9,37 @@ pub struct List<T: Clone + PartialEq> {
     tail: StrongNode<T>,
 }
 
-impl<T: Clone + PartialEq> Iterator for List<T> {
-    type Item = T;
+pub struct ListIter<T: Clone + PartialEq> {
+    curr: StrongNode<T>,
+}
 
+#[derive(Debug)]
+struct Node<T: Clone + PartialEq> {
+    val: Rc<RefCell<T>>,
+    next: StrongNode<T>,
+    prev: WeakNode<T>,
+}
+
+impl<T: Clone + PartialEq> Node<T> {
+    fn new(val: T, next: StrongNode<T>, prev: WeakNode<T>) -> Self {
+        Self {
+            val: Rc::new(RefCell::new(val)),
+            next,
+            prev,
+        }
+    }
+}
+
+impl<T: Clone + PartialEq> Iterator for ListIter<T> {
+    type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(head) = self.head.clone() {
-            let item = head.as_ref().borrow().val.borrow().clone();
-            self.length -= 1;
-            self.head = head.as_ref().borrow().next.clone();
-            if self.length == 0 {
-                self.tail = None;
-            }
+        if let Some(curr) = self.curr.clone() {
+            let item = curr.as_ref().borrow().val.borrow().clone();
+            self.curr = curr.as_ref().borrow().next.clone();
             return Some(item);
         }
         None
     }
-
 }
 
 impl<T: Clone + PartialEq> List<T> {
@@ -180,21 +195,10 @@ impl<T: Clone + PartialEq> List<T> {
         self.length -= 1;
         return Some(curr.as_ref().borrow().val.as_ref().borrow().clone());
     }
-}
 
-#[derive(Debug)]
-struct Node<T: Clone + PartialEq> {
-    val: Rc<RefCell<T>>,
-    next: StrongNode<T>,
-    prev: WeakNode<T>,
-}
-
-impl<T: Clone + PartialEq> Node<T> {
-    fn new(val: T, next: StrongNode<T>, prev: WeakNode<T>) -> Self {
-        Self {
-            val: Rc::new(RefCell::new(val)),
-            next,
-            prev,
+    pub fn iter(&self) -> ListIter<T> {
+        ListIter {
+            curr: self.head.clone(),
         }
     }
 }
@@ -356,5 +360,24 @@ mod tests {
         assert_eq!(list.remove_at(3), Some(50));
         assert_eq!(list.length, 3);
         assert!(list.get(3).is_none());
+    }
+
+    #[test]
+    fn test_iterator() {
+        let mut list = List::new();
+        list.append(10);
+        list.append(20);
+        list.append(30);
+        list.append(40);
+        list.append(50);
+
+        let mut list = list.iter();
+
+        assert_eq!(list.next(), Some(10));
+        assert_eq!(list.next(), Some(20));
+        assert_eq!(list.next(), Some(30));
+        assert_eq!(list.next(), Some(40));
+        assert_eq!(list.next(), Some(50));
+        assert_eq!(list.next(), None);
     }
 }
