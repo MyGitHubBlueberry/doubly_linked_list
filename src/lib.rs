@@ -9,6 +9,24 @@ pub struct List<T: Clone + PartialEq> {
     tail: StrongNode<T>,
 }
 
+impl<T: Clone + PartialEq> Iterator for List<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(head) = self.head.clone() {
+            let item = head.as_ref().borrow().val.borrow().clone();
+            self.length -= 1;
+            self.head = head.as_ref().borrow().next.clone();
+            if self.length == 0 {
+                self.tail = None;
+            }
+            return Some(item);
+        }
+        None
+    }
+
+}
+
 impl<T: Clone + PartialEq> List<T> {
     pub fn new() -> Self {
         Self {
