@@ -1,9 +1,12 @@
 use std::{cell::RefCell, rc::{Rc, Weak}};
 
+type StrongNode<T> = Option<Rc<RefCell<Node<T>>>>; 
+type WeakNode<T> = Option<Weak<RefCell<Node<T>>>>; 
+
 pub struct List<T: Clone + PartialEq> {
     pub length: usize,
-    head: Option<Rc<RefCell<Node<T>>>>,
-    tail: Option<Rc<RefCell<Node<T>>>>,
+    head: StrongNode<T>,
+    tail: StrongNode<T>,
 }
 
 impl<T: Clone + PartialEq> List<T> {
@@ -164,12 +167,12 @@ impl<T: Clone + PartialEq> List<T> {
 #[derive(Debug)]
 struct Node<T: Clone + PartialEq> {
     val: Rc<RefCell<T>>,
-    next: Option<Rc<RefCell<Node<T>>>>,
-    prev: Option<Weak<RefCell<Node<T>>>>,
+    next: StrongNode<T>,
+    prev: WeakNode<T>,
 }
 
 impl<T: Clone + PartialEq> Node<T> {
-    fn new(val: T, next: Option<Rc<RefCell<Node<T>>>>, prev: Option<Weak<RefCell<Node<T>>>>) -> Self {
+    fn new(val: T, next: StrongNode<T>, prev: WeakNode<T>) -> Self {
         Self {
             val: Rc::new(RefCell::new(val)),
             next,
